@@ -4,6 +4,12 @@ use std::process::exit;
 #[derive(Debug)]
 pub enum Errcode {
     ArgumentInvalid(&'static str),
+    ContainerError(u8),
+    SocketError(u8),
+    ChildProcessError(u8),
+    HostnameError(u8),
+    RngError,
+    MountsError(u8),
 }
 
 #[allow(unreachable_patterns)]

@@ -11,14 +11,14 @@ pub struct MyOptions {
     #[options(help = "activate debug mode")]
     debug: bool,
 
-    #[options(help = "command to execute inside the container")]
-    command: String,
+    #[options(help = "command to execute inside the container", required)]
+    pub command: String,
 
     #[options(help = "user id to create inside container")]
-    uid: u32,
+    pub uid: u32,
 
     #[options(help = "directory to mount as root of container", long = "mount")]
-    mount_dir: PathBuf,
+    pub mount_dir: PathBuf,
 }
 
 pub fn parse_args() -> Result<MyOptions, Errcode> {
