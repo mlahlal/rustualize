@@ -7,4 +7,5 @@ edition = "2021"
 env_logger = "0.11.6"
 gumdrop = "0.8.1"
 log = "0.4.25"
-nix = { version = "0.29.0", features = ["sched", "hostname"] }
+nix = { version = "0.29.0", features = ["sched", "hostname", "socket", "mount", "fs"] }
+rand = "0.8.5"
