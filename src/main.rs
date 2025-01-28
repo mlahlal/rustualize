@@ -13,6 +13,8 @@ mod ipc;
 mod child;
 mod hostname;
 mod mounts;
+mod namespaces;
+mod capabilities;
 
 fn main() -> std::io::Result<()> {
     match cli::parse_args() {

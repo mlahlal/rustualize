@@ -10,6 +10,8 @@ pub enum Errcode {
     HostnameError(u8),
     RngError,
     MountsError(u8),
+    NamespaceError(u8),
+    CapabilitiesError(u8),
 }
 
 #[allow(unreachable_patterns)]

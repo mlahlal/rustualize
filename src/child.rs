@@ -1,9 +1,11 @@
-use crate::errors::{Errcode};
+use crate::errors::Errcode;
 use crate::config::ContainerOpts;
 use crate::hostname::set_container_hostname;
 use crate::mounts::setmountpoint;
+use crate::namespaces::userns;
+use crate::capabilities::setcapabilities;
 
-use nix::unistd::Pid;
+use nix::unistd::{Pid, close};
 use nix::sched::clone;
 use nix::sys::signal::Signal;
 use nix::sched::CloneFlags;
@@ -17,6 +19,11 @@ fn child(config: ContainerOpts) -> isize {
             log::error!("Error while configuring container: {:?}", e);
             return -1;
         }
+    }
+
+    if let Err(_) = close(config.fd) {
+        log::error!("Error while closing socket...");
+        return -1;
     }
 
     log::info!("Started container with command {} and args {:?}", config.path.to_str().unwrap(), config.argv);
@@ -48,6 +55,8 @@ pub fn generate_child_process(config: ContainerOpts) -> Result<Pid, Errcode> {
 fn setup_container_configurations(config: &ContainerOpts) -> Result<(), Errcode> {
     set_container_hostname(&config.hostname)?;
     setmountpoint(&config.mount_dir)?;
+    userns(config.fd, config.uid)?;
+    setcapabilities()?;
 
     Ok(())
 }
