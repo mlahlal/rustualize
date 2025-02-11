@@ -30,6 +30,10 @@ pub fn parse_args() -> Result<MyOptions, Errcode> {
         setup_log(log::LevelFilter::Info);
     }
 
+    if opts.command.is_empty() {
+        return Err(Errcode::ArgumentInvalid("command"));
+    }
+
     if !opts.mount_dir.exists() || !opts.mount_dir.is_dir() {
         return Err(Errcode::ArgumentInvalid("mount"));
     }

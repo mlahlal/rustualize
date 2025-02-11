@@ -15,6 +15,9 @@ mod hostname;
 mod mounts;
 mod namespaces;
 mod capabilities;
+mod syscalls;
+mod resources;
+mod filesystem;
 
 fn main() -> std::io::Result<()> {
     match cli::parse_args() {
