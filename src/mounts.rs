@@ -69,11 +69,11 @@ pub fn setmountpoint(mount_dir: &PathBuf) -> Result<(), Errcode> {
         return Err(Errcode::MountsError(4));
     }
 
-    log::debug!("Unmounting old root");
     let old_root = PathBuf::from(format!("/{}", old_root_tail));
     if let Err(_) = chdir(&PathBuf::from("/")) {
         return Err(Errcode::MountsError(5));
     }
+    log::debug!("Unmounting old root");
     unmount_path(&old_root)?;
     delete_dir(&old_root)?;
 
