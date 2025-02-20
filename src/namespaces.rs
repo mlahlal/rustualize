@@ -8,26 +8,16 @@ use nix::sched::{unshare, CloneFlags};
 use nix::unistd::{Pid, Uid, Gid};
 use nix::unistd::{setgroups, setresuid, setresgid};
 
-const USERNS_OFFSET: u64 = 10000;
-const USERNS_COUNT: u64 = 2000;
+const USERNS_OFFSET: u64 = 0;
+const USERNS_COUNT: u64 = 1;
 
 pub fn userns(fd: RawFd, uid: u32) -> Result<(), Errcode> {
     log::debug!("Setting up user namespace with UID {}", uid);
-    let has_userns = match unshare(CloneFlags::CLONE_NEWUSER) {
-        Ok(_) => true,
-        Err(_) => false,
-    };
 
-    send_boolean(fd, has_userns)?;
+    send_boolean(fd, true)?;
 
     if recv_boolean(fd)? {
         return Err(Errcode::NamespaceError(0));
-    }
-
-    if has_userns {
-        log::info!("User namespace set up");
-    } else {
-        log::info!("User namespace not supported, continuing...");
     }
 
     log::debug!("Switching to uid {} / gid {}...", uid, uid);
@@ -48,6 +38,26 @@ pub fn userns(fd: RawFd, uid: u32) -> Result<(), Errcode> {
 
 
     Ok(())
+}
+
+pub fn create_namespaces() -> Result<(), Errcode> {
+    log::debug!("Setting up new namespace (NEWNS, NEWNET, NEWCGROUP, NEWPID, NEWIPC, NEWUTS)");
+    let mut flags = CloneFlags::empty();
+
+    flags.insert(CloneFlags::CLONE_NEWNS);
+    flags.insert(CloneFlags::CLONE_NEWNET);
+    flags.insert(CloneFlags::CLONE_NEWCGROUP);
+    flags.insert(CloneFlags::CLONE_NEWPID);
+    flags.insert(CloneFlags::CLONE_NEWIPC);
+    flags.insert(CloneFlags::CLONE_NEWUTS);
+
+    match unshare(flags) {
+        Ok(_) => Ok(()),
+        Err(e) => {
+            log::error!("Error while creating namespaces : {:?}", e);
+            return Err(Errcode::NamespaceError(1));
+        }
+    }
 }
 
 pub fn handle_child_uid_map(pid: Pid, fd: RawFd) -> Result<(), Errcode> {

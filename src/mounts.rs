@@ -58,7 +58,7 @@ pub fn setmountpoint(mount_dir: &PathBuf) -> Result<(), Errcode> {
 
     let new_root = PathBuf::from(format!("/tmp/rustualize.{}", random_string(12)));
     create_directory(&new_root)?;
-    mount_directory(Some(&mount_dir), &new_root, vec![MsFlags::MS_BIND, MsFlags::MS_REC, MsFlags::MS_PRIVATE])?;
+    mount_directory(Some(&mount_dir), &new_root, vec![MsFlags::MS_BIND, MsFlags::MS_PRIVATE])?;
 
     log::debug!("Pivoting root");
     let old_root_tail = format!("oldroot.{}", random_string(6));
@@ -67,6 +67,10 @@ pub fn setmountpoint(mount_dir: &PathBuf) -> Result<(), Errcode> {
     if let Err(_) = pivot_root(&new_root, &put_old) {
         return Err(Errcode::MountsError(4));
     }
+
+    //create_directory(&PathBuf::from("/proc"))?;
+    //log::debug!("created proc");
+    //mount_directory(Some(&PathBuf::from("/proc")), &PathBuf::from("/proc"), vec![])?;
 
     let old_root = PathBuf::from(format!("/{}", old_root_tail));
     if let Err(_) = chdir(&PathBuf::from("/")) {

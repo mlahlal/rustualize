@@ -8,17 +8,18 @@ use cgroups_rs::{cgroup_builder::CgroupBuilder, MaxValue};
 use cgroups_rs::CgroupPid;
 use cgroups_rs::hierarchies::V2;
 
-const KMEM_LIMIT: i64 = 1024 * 1024 * 1024;
+const KMEM_LIMIT: i64 = 2048 * 1024 * 1024;
 const MEM_LIMIT: i64 = KMEM_LIMIT;
-const MAX_PID: MaxValue = MaxValue::Value(64);
-const NOFILE_RLIMIT: u64 = 64;
+const MAX_PID: MaxValue = MaxValue::Value(256);
+const NOFILE_RLIMIT: u64 = 1024;
 
 pub fn restrict_resources(hostname: &String, pid: Pid) -> Result<(), Errcode> {
     log::debug!("Restricting resources for hostname {}", hostname);
 
     let Ok(cgs) = CgroupBuilder::new(hostname)
         .cpu().shares(256).done()
-        .memory().kernel_memory_limit(KMEM_LIMIT).memory_hard_limit(MEM_LIMIT).done()
+        //.memory().kernel_memory_limit(KMEM_LIMIT).memory_hard_limit(MEM_LIMIT).done()
+        .memory().memory_hard_limit(MEM_LIMIT).done()
         .pid().maximum_number_of_processes(MAX_PID).done()
         .blkio().weight(50).done()
         .build(Box::new(V2::new()))

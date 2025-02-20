@@ -5,7 +5,7 @@ use crate::child::generate_child_process;
 use crate::mounts::clean_mounts;
 use crate::namespaces::handle_child_uid_map;
 use crate::resources::{restrict_resources, clean_cgroups};
-use crate::filesystem::setfilesystem;
+//use crate::filesystem::setfilesystem;
 
 use std::os::fd::RawFd;
 use nix::unistd::Pid;
@@ -35,9 +35,9 @@ impl Container {
     }
 
     pub fn create(&mut self) -> Result<(), Errcode> {
-        setfilesystem(self.config.clone())?;
+        //setfilesystem(self.config.clone())?;
         let pid = generate_child_process(self.config.clone())?;
-        restrict_resources(&self.config.hostname, pid)?;
+        //restrict_resources(&self.config.hostname, pid)?;
         handle_child_uid_map(pid, self.sockets.0)?;
         self.child_pid = Some(pid);
         log::debug!("Creation finished");
@@ -49,10 +49,10 @@ impl Container {
 
         clean_mounts(&self.config.mount_dir)?;
 
-        if let Err(e) = clean_cgroups(&self.config.hostname) {
-            log::error!("Cgroups cleaning failed: {}", e);
-            return Err(e);
-        }
+        //if let Err(e) = clean_cgroups(&self.config.hostname) {
+        //    log::error!("Cgroups cleaning failed: {}", e);
+        //    return Err(e);
+        //}
 
         Ok(())
     }
