@@ -18,7 +18,7 @@ fn debootstrap(dest: &str) -> Result<(), Errcode> {
         .arg(dest)
         .arg("http://deb.debian.org/debian")
         .output() {
-            Ok(output) => log::debug!("debootstrap output : {}", output),
+            Ok(output) => log::debug!("debootstrap output : {:?}", output),
             Err(e) => {
                 log::error!("Debootstrap error : {:?}", e);
                 return Err(Errcode::ArgumentInvalid("debootstrap error"));

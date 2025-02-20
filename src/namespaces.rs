@@ -52,8 +52,10 @@ pub fn userns(fd: RawFd, uid: u32) -> Result<(), Errcode> {
 
 pub fn handle_child_uid_map(pid: Pid, fd: RawFd) -> Result<(), Errcode> {
     if recv_boolean(fd)? {
+        log::debug!("Setting uid_map and gid_map for process pid : {}", pid.as_raw());
+
         if let Ok(mut uid_map) = File::create(format!("/proc/{}/{}", pid.as_raw(), "uid_map")) {
-            if let Err(_) = uid_map.write_all(format!("0 {} {}", USERNS_OFFSET, USERNS_COUNT).as_bytes()) {
+            if let Err(_) = uid_map.write_all(format!("0 {} {}\n", USERNS_OFFSET, USERNS_COUNT).as_bytes()) {
                 return Err(Errcode::NamespaceError(4));
             }
         } else {
@@ -61,7 +63,7 @@ pub fn handle_child_uid_map(pid: Pid, fd: RawFd) -> Result<(), Errcode> {
         }
 
         if let Ok(mut gid_map) = File::create(format!("/proc/{}/{}", pid.as_raw(), "gid_map")) {
-            if let Err(_) = gid_map.write_all(format!("0 {} {}", USERNS_OFFSET, USERNS_COUNT).as_bytes()) {
+            if let Err(_) = gid_map.write_all(format!("0 {} {}\n", USERNS_OFFSET, USERNS_COUNT).as_bytes()) {
                 return Err(Errcode::NamespaceError(6));
             }
         } else {

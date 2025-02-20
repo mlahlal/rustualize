@@ -35,7 +35,7 @@ impl Container {
     }
 
     pub fn create(&mut self) -> Result<(), Errcode> {
-        setfilesystem(self.config.clone());
+        setfilesystem(self.config.clone())?;
         let pid = generate_child_process(self.config.clone())?;
         restrict_resources(&self.config.hostname, pid)?;
         handle_child_uid_map(pid, self.sockets.0)?;

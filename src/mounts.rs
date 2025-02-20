@@ -57,9 +57,8 @@ pub fn setmountpoint(mount_dir: &PathBuf) -> Result<(), Errcode> {
     mount_directory(None, &PathBuf::from("/"), vec![MsFlags::MS_REC, MsFlags::MS_PRIVATE])?;
 
     let new_root = PathBuf::from(format!("/tmp/rustualize.{}", random_string(12)));
-    log::debug!("Mounting temp directory {}", new_root.as_path().to_str().unwrap());
     create_directory(&new_root)?;
-    mount_directory(Some(&mount_dir), &new_root, vec![MsFlags::MS_BIND, MsFlags::MS_PRIVATE])?;
+    mount_directory(Some(&mount_dir), &new_root, vec![MsFlags::MS_BIND, MsFlags::MS_REC, MsFlags::MS_PRIVATE])?;
 
     log::debug!("Pivoting root");
     let old_root_tail = format!("oldroot.{}", random_string(6));
@@ -89,6 +88,8 @@ pub fn mount_directory(path: Option<&PathBuf>, mount_point: &PathBuf, flags: Vec
     for f in flags.iter() {
         ms_flags.insert(*f);
     }
+
+    log::debug!("Mounting {:?} in {}", path, mount_point.to_str().unwrap());
 
     match mount::<PathBuf, PathBuf, PathBuf, PathBuf>(path, mount_point, None, ms_flags, None) {
         Ok(_) => Ok(()),
