@@ -36,6 +36,9 @@ pub fn userns(fd: RawFd, uid: u32) -> Result<(), Errcode> {
         return Err(Errcode::NamespaceError(3));
     }
 
+    //create_namespaces()?;
+
+    //send_boolean(fd, true)?;
 
     Ok(())
 }
@@ -47,7 +50,7 @@ pub fn create_namespaces() -> Result<(), Errcode> {
     flags.insert(CloneFlags::CLONE_NEWNS);
     flags.insert(CloneFlags::CLONE_NEWNET);
     flags.insert(CloneFlags::CLONE_NEWCGROUP);
-    flags.insert(CloneFlags::CLONE_NEWPID);
+    //flags.insert(CloneFlags::CLONE_NEWPID);
     flags.insert(CloneFlags::CLONE_NEWIPC);
     flags.insert(CloneFlags::CLONE_NEWUTS);
 
@@ -84,5 +87,10 @@ pub fn handle_child_uid_map(pid: Pid, fd: RawFd) -> Result<(), Errcode> {
     }
 
     log::debug!("Child UID/GID map done, sending signal to child to continue...");
-    send_boolean(fd, false)
+
+    send_boolean(fd, false)?;
+
+    //recv_boolean(fd)?;
+
+    Ok(())
 }

@@ -54,11 +54,11 @@ pub fn create_directory(path: &PathBuf) -> Result<(), Errcode> {
 
 pub fn setmountpoint(mount_dir: &PathBuf) -> Result<(), Errcode> {
     log::debug!("Setting mount points...");
-    mount_directory(None, &PathBuf::from("/"), vec![MsFlags::MS_REC, MsFlags::MS_PRIVATE])?;
+    mount_directory(None, &PathBuf::from("/"), None, vec![MsFlags::MS_REC, MsFlags::MS_PRIVATE])?;
 
     let new_root = PathBuf::from(format!("/tmp/rustualize.{}", random_string(12)));
     create_directory(&new_root)?;
-    mount_directory(Some(&mount_dir), &new_root, vec![MsFlags::MS_BIND, MsFlags::MS_PRIVATE])?;
+    mount_directory(Some(&mount_dir), &new_root, None, vec![MsFlags::MS_BIND, MsFlags::MS_PRIVATE])?;
 
     log::debug!("Pivoting root");
     let old_root_tail = format!("oldroot.{}", random_string(6));
@@ -68,17 +68,16 @@ pub fn setmountpoint(mount_dir: &PathBuf) -> Result<(), Errcode> {
         return Err(Errcode::MountsError(4));
     }
 
-    //create_directory(&PathBuf::from("/proc"))?;
-    //log::debug!("created proc");
-    //mount_directory(Some(&PathBuf::from("/proc")), &PathBuf::from("/proc"), vec![])?;
-
+    log::debug!("Unmounting old root");
     let old_root = PathBuf::from(format!("/{}", old_root_tail));
+    unmount_path(&old_root)?;
+    delete_dir(&old_root)?;
+
     if let Err(_) = chdir(&PathBuf::from("/")) {
         return Err(Errcode::MountsError(5));
     }
-    log::debug!("Unmounting old root");
-    unmount_path(&old_root)?;
-    delete_dir(&old_root)?;
+
+    mount_directory(Some(&PathBuf::from("proc")), &PathBuf::from("/proc"), Some(&PathBuf::from("proc")), vec![])?;
 
     Ok(())
 }
@@ -87,7 +86,7 @@ pub fn clean_mounts (_rootpath: &PathBuf) -> Result<(), Errcode> {
     Ok(())
 }
 
-pub fn mount_directory(path: Option<&PathBuf>, mount_point: &PathBuf, flags: Vec<MsFlags>) -> Result<(), Errcode> {
+pub fn mount_directory(path: Option<&PathBuf>, mount_point: &PathBuf, fs_type: Option<&PathBuf>, flags: Vec<MsFlags>) -> Result<(), Errcode> {
     let mut ms_flags = MsFlags::empty();
     for f in flags.iter() {
         ms_flags.insert(*f);
@@ -95,7 +94,7 @@ pub fn mount_directory(path: Option<&PathBuf>, mount_point: &PathBuf, flags: Vec
 
     log::debug!("Mounting {:?} in {}", path, mount_point.to_str().unwrap());
 
-    match mount::<PathBuf, PathBuf, PathBuf, PathBuf>(path, mount_point, None, ms_flags, None) {
+    match mount::<PathBuf, PathBuf, PathBuf, PathBuf>(path, mount_point, fs_type, ms_flags, None) {
         Ok(_) => Ok(()),
         Err(e) => {
             if let Some(p) = path {

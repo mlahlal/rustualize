@@ -17,15 +17,22 @@ pub fn restrict_resources(hostname: &String, pid: Pid) -> Result<(), Errcode> {
     log::debug!("Restricting resources for hostname {}", hostname);
 
     let Ok(cgs) = CgroupBuilder::new(hostname)
-        .cpu().shares(256).done()
+        //.cpu().shares(256).done()
         //.memory().kernel_memory_limit(KMEM_LIMIT).memory_hard_limit(MEM_LIMIT).done()
         .memory().memory_hard_limit(MEM_LIMIT).done()
         .pid().maximum_number_of_processes(MAX_PID).done()
-        .blkio().weight(50).done()
+        //.blkio().weight(50).done()
         .build(Box::new(V2::new()))
     else {
         return Err(Errcode::ResourcesError(0));
     };
+
+    //if let Err(e) = cgs.set_cgroup_type("threaded") {
+    //    log::error!("Error setting Cgroup mode : {:?}", e);
+    //    return Err(Errcode::ResourcesError(2));
+    //}
+
+    log::debug!("Cgroup type : {}", cgs.get_cgroup_type().unwrap());
 
     let pid: u64 = pid.as_raw().try_into().unwrap();
 

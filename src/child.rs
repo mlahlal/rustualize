@@ -2,10 +2,10 @@ use crate::errors::Errcode;
 use crate::config::ContainerOpts;
 use crate::hostname::set_container_hostname;
 use crate::mounts::setmountpoint;
-use crate::namespaces::userns;
-use crate::namespaces::create_namespaces;
-use crate::capabilities::setcapabilities;
-use crate::syscalls::setsyscalls;
+//use crate::namespaces::userns;
+//use crate::namespaces::create_namespaces;
+//use crate::capabilities::setcapabilities;
+//use crate::syscalls::setsyscalls;
 
 use nix::unistd::{Pid, close, execve};
 use nix::sched::clone;
@@ -43,19 +43,20 @@ fn child(config: ContainerOpts) -> isize {
 
 pub fn generate_child_process(config: ContainerOpts) -> Result<Pid, Errcode> {
     let mut tmp_stack: [u8; STACK_SIZE] = [0; STACK_SIZE];
-    //let mut flags = CloneFlags::empty();
+    let mut flags = CloneFlags::empty();
 
-    //flags.insert(CloneFlags::CLONE_NEWNS);
-    //flags.insert(CloneFlags::CLONE_NEWNET);
+    flags.insert(CloneFlags::CLONE_NEWNS);
+    flags.insert(CloneFlags::CLONE_NEWNET);
     //flags.insert(CloneFlags::CLONE_NEWCGROUP);
-    //flags.insert(CloneFlags::CLONE_NEWPID);
-    //flags.insert(CloneFlags::CLONE_NEWIPC);
-    //flags.insert(CloneFlags::CLONE_NEWUTS);
+    //flags.insert(CloneFlags::CLONE_NEWUSER);
+    flags.insert(CloneFlags::CLONE_NEWPID);
+    flags.insert(CloneFlags::CLONE_NEWIPC);
+    flags.insert(CloneFlags::CLONE_NEWUTS);
 
     match unsafe { clone(
         Box::new(|| child(config.clone())),
         &mut tmp_stack,
-        CloneFlags::CLONE_NEWUSER,
+        flags,
         Some(Signal::SIGCHLD as i32),
     ) } {
         Ok(pid) => Ok(pid),
@@ -64,12 +65,12 @@ pub fn generate_child_process(config: ContainerOpts) -> Result<Pid, Errcode> {
 }
 
 fn setup_container_configurations(config: &ContainerOpts) -> Result<(), Errcode> {
-    userns(config.fd, config.uid)?;
-    create_namespaces()?;
+    //userns(config.fd, config.uid)?;
+    //create_namespaces()?;
     set_container_hostname(&config.hostname)?;
     setmountpoint(&config.mount_dir)?;
-    setcapabilities()?;
-    setsyscalls()?;
+    //setcapabilities()?;
+    //setsyscalls()?;
 
     Ok(())
 }

@@ -27,9 +27,5 @@ fn main() -> std::io::Result<()> {
         }
     }
 
-    if true {
-        return Ok(());
-    }
-
     Ok(())
 }
