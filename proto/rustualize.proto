@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package rustualize;
+
+service Rustualize {
+    rpc Start (RustualizeRequest) returns (RustualizeResponse);
+}
+
+message RustualizeRequest {
+    string image = 1;
+}
+
+message RustualizeResponse {
+    string code = 1;
+}
+
+message StartContainerRequest {
+    string containerName = 1;
+}
+
+message StartContainerResponse {
+    string code = 1;
+}
+
+message StopContainerRequest {
+    string containerName = 1;
+}
+
+message StopContainerResponse {
+    string containerName = 1;
+}
+
+message ListContainersRequest {
+    string showAll = 1;
+}
+
+message ListContainersResponse {
+    string containers = 1;
+}

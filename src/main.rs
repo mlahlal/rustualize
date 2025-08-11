@@ -14,8 +14,9 @@ mod capabilities;
 mod syscalls;
 mod resources;
 mod filesystem;
+mod api;
 
-fn main() -> std::io::Result<()> {
+/*fn main() -> std::io::Result<()> {
     match cli::parse_args() {
         Ok(args) => {
             log::info!("{:?}", args);
@@ -28,4 +29,4 @@ fn main() -> std::io::Result<()> {
     }
 
     Ok(())
-}
+}*/
