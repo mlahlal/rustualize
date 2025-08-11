@@ -6,10 +6,13 @@ use crate::mounts::clean_mounts;
 //use crate::namespaces::handle_child_uid_map;
 //use crate::resources::{restrict_resources, clean_cgroups};
 //use crate::filesystem::setfilesystem;
-
+use nix::sys::signal::Signal;
+use nix::sys::signal::SigHandler;
+use nix::sys::signal::signal;
 use std::os::fd::RawFd;
 use nix::unistd::Pid;
 use nix::sys::wait::waitpid;
+use nix::sys::wait::WaitPidFlag;
 
 pub struct Container {
     config: ContainerOpts,
@@ -59,12 +62,24 @@ impl Container {
 }
 
 pub fn wait_child (pid: Option<Pid>) -> Result<(), Errcode> {
+    unsafe {
+        if let Err(e) = signal(Signal::SIGINT, SigHandler::SigIgn) {
+            log::error!("Error while ignoring SIGINT {:?}", e);
+        }
+    }
+
     if let Some(child_pid) = pid {
         log::debug!("Waiting child (pid: {}) to finish", child_pid);
 
-        if let Err(e) = waitpid(child_pid, None) {
+        if let Err(e) = waitpid(child_pid, Some(WaitPidFlag::WUNTRACED)) {
             log::error!("Error while waiting for pid to finish {:?}", e);
             return Err(Errcode::ContainerError(1));
+        }
+    }
+
+    unsafe {
+        if let Err(e) = signal(Signal::SIGINT, SigHandler::SigDfl) {
+            log::error!("Error while restoring SIGINT {:?}", e);
         }
     }
 
