@@ -1,6 +1,20 @@
 use tonic::{transport::Server, Request, Response, Status};
 use proto::rustualize_server::{Rustualize, RustualizeServer};
-use proto::{RustualizeRequest, RustualizeResponse};
+use proto::{StartContainerRequest, StartContainerResponse};
+
+mod container;
+mod cli;
+mod errors;
+mod config;
+mod ipc;
+mod child;
+mod hostname;
+mod mounts;
+mod namespaces;
+mod capabilities;
+mod syscalls;
+mod resources;
+mod filesystem;
 
 pub mod proto {
     tonic::include_proto!("rustualize");
@@ -13,12 +27,25 @@ pub struct RustualizeApi {}
 
 #[tonic::async_trait]
 impl Rustualize for RustualizeApi {
-    async fn start(&self, request: Request<RustualizeRequest>) -> Result<Response<RustualizeResponse>, Status> {
+    async fn start(&self, request: Request<StartContainerRequest>) -> Result<Response<StartContainerResponse>, Status> {
         println!("Got a request {:?}", request);
 
-        let response = RustualizeResponse {
-            code: "OK BRO".to_string(),
-        };
+        let res = container::start(request.into_inner());
+        let response;
+
+        match res {
+            Ok(_) => {
+                response = StartContainerResponse {
+                    code: "Exit without any error, returning 0".to_string(),
+                }
+            },
+            Err(e) => {
+                //let retcode = e.get_retcode();
+                response = StartContainerResponse {
+                    code: "Error on exit: \n\t{} \n\tReturning {retcode not found}".to_string(),
+                }
+            }
+        }
 
         Ok(Response::new(response))
     }
@@ -32,6 +59,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .register_encoded_file_descriptor_set(proto::FILE_DESCRIPTOR_SET)
         .build_v1()
         .unwrap();
+
+    env_logger::Builder::from_default_env()
+        .format_timestamp_secs()
+        .filter(None, log::LevelFilter::Debug)
+        .init();
 
     Server::builder()
         .add_service(reflection_service)

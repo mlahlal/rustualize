@@ -3,16 +3,19 @@ use crate::errors::Errcode;
 use crate::config::ContainerOpts;
 use crate::child::generate_child_process;
 use crate::mounts::clean_mounts;
+use crate::proto::StartContainerRequest;
 //use crate::namespaces::handle_child_uid_map;
 //use crate::resources::{restrict_resources, clean_cgroups};
 //use crate::filesystem::setfilesystem;
+
 use nix::sys::signal::Signal;
 use nix::sys::signal::SigHandler;
 use nix::sys::signal::signal;
-use std::os::fd::RawFd;
-use nix::unistd::Pid;
 use nix::sys::wait::waitpid;
 use nix::sys::wait::WaitPidFlag;
+use std::os::fd::RawFd;
+use nix::unistd::Pid;
+use std::path::PathBuf;
 
 pub struct Container {
     config: ContainerOpts,
@@ -21,11 +24,12 @@ pub struct Container {
 }
 
 impl Container {
-    pub fn new(args: MyOptions) -> Result<Container, Errcode> {
+    pub fn new(args: StartContainerRequest) -> Result<Container, Errcode> {
         let (config, sockets) = ContainerOpts::new(
             args.command,
             args.uid,
-            args.mount_dir,
+            PathBuf::from(args.mount_dir),
+            args.detach,
         )?;
 
         Ok(
@@ -40,6 +44,10 @@ impl Container {
     pub fn create(&mut self) -> Result<(), Errcode> {
         //setfilesystem(self.config.clone())?;
         let pid = generate_child_process(self.config.clone())?;
+        //let pid = tokio::task::spawn_blocking(move || generate_child_process(self.config.clone())?)
+        //    .await
+        //    .map_err(|e| Status::internal(format!("task join error: {}", e)))?
+        //    .map_err(|e| Status::internal(format!("clone failed: {}", e)))?;
         //restrict_resources(&self.config.hostname, pid)?;
         //handle_child_uid_map(pid, self.sockets.0)?;
         self.child_pid = Some(pid);
@@ -86,7 +94,7 @@ pub fn wait_child (pid: Option<Pid>) -> Result<(), Errcode> {
     Ok(())
 }
 
-pub fn start(args: MyOptions) -> Result<(), Errcode> {
+pub fn start(args: StartContainerRequest) -> Result<(), Errcode> {
     let mut container = Container::new(args)?;
 
     log::debug!("Container sockets : ({}, {})", container.sockets.0, container.sockets.1);
@@ -99,9 +107,12 @@ pub fn start(args: MyOptions) -> Result<(), Errcode> {
 
     log::debug!("Container child PID : {:?}", container.child_pid);
 
-    wait_child(container.child_pid)?;
-
-    log::debug!("Finished, cleaning & exit");
-
-    container.clean_exit()
+    if container.config.detach {
+        wait_child(container.child_pid)?;
+        log::debug!("Finished, cleaning & exit");
+        container.clean_exit()
+    } else {
+        log::debug!("Container started");
+        Ok(())
+    }
 }

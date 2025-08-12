@@ -14,10 +14,11 @@ pub struct ContainerOpts {
     pub mount_dir: PathBuf,
     pub fd: RawFd,
     pub hostname: String,
+    pub detach: bool,
 }
 
 impl ContainerOpts {
-    pub fn new(command: String, uid: u32, mount_dir: PathBuf) -> Result<(ContainerOpts, (RawFd, RawFd)), Errcode> {
+    pub fn new(command: String, uid: u32, mount_dir: PathBuf, detach: bool) -> Result<(ContainerOpts, (RawFd, RawFd)), Errcode> {
         let argv: Vec<CString> = command.split_ascii_whitespace()
             .map(|s| CString::new(s).expect("Cannot read arg")).collect();
 
@@ -33,6 +34,7 @@ impl ContainerOpts {
                 mount_dir,
                 fd: sockets.1.clone(),
                 hostname: generate_hostname()?,
+                detach,
             },
             sockets
         ))
